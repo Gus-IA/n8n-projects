@@ -1,0 +1,283 @@
+{
+  "name": "Quote of the day Slack",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -16,
+        -192
+      ],
+      "id": "d416089d-8c82-481f-a6df-319d7ce3d772",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://www.zenquotes.io/api/random",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        432,
+        -96
+      ],
+      "id": "efcc0235-c0d5-42a7-927a-6da8731897af",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "USLACKBOT",
+          "mode": "list",
+          "cachedResultName": "slackbot"
+        },
+        "text": "=\"{{ $('HTTP Request').item.json.q }}\"\n-{{ $('HTTP Request').item.json.a }}\n\n{{ $json.output }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1008,
+        -96
+      ],
+      "id": "4cc9963a-1b91-41c8-a945-85411c3e460c",
+      "name": "Send a message",
+      "webhookId": "37ea40cb-a955-4bc2-8ee5-c0b5723d9ef6",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "pwErB1f8q3GpNET2",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "880f9ba2-8062-4fcd-a84c-8b58d05e847d",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0702a964-a0b5-42ad-809b-ee7db5d1949c",
+              "leftValue": "={{ $json['Day of week'] }}",
+              "rightValue": "Saturday",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "cf6d8ee5-a97e-411d-a6f6-0921ab90a5c4",
+              "leftValue": "={{ $json['Day of week'] }}",
+              "rightValue": "Sunday",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        -192
+      ],
+      "id": "0a054e72-1870-4bd8-8cd7-0149f17c3976",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un agente que observa una cita diaria y su autor. Busca información sobre el autor y el contexto de la cita usando wikipedia. Luego proporciona información adicional a la cita diaria para ayudar a inspirar al lector a tener un mejor día.\n\nCita:  {{ $json.q }}\nAutor: {{ $json.a }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        656,
+        -96
+      ],
+      "id": "2c47ca66-0566-4204-a3fc-851b43fe363c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "sessionID"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        768,
+        208
+      ],
+      "id": "8eb81f7a-533e-4817-8ac6-99b96747938a",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        816,
+        112
+      ],
+      "id": "35e07b5d-9a8c-4a05-95e4-cd22b79686fa",
+      "name": "Wikipedia"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        528,
+        112
+      ],
+      "id": "a82c078e-1c01-4cd6-97d4-483eb4004bf1",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "afJyfd7pmQZQWl79",
+          "name": "Groq account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "de6d690d-c42d-40d6-8838-e973bdf2c8ea",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7e2141856ba68d52ad77a6b2519c88af1c901a9f6f2d71453da6616e7585d010"
+  },
+  "id": "Y89iz6h698sw86qN",
+  "tags": []
+}
