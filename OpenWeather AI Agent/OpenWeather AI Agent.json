@@ -1,0 +1,248 @@
+{
+  "name": "OpenWeather AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Cada mañana recopila el clima de San Francisco. Selecciona 2-3 noticias positivas en tendencia. Busca un dato curioso en Wikipedia. No repitas nada de días anteriores. Dale formato como un mini voletín de correo electrónico como markdown.\nFecha actual {{ $json['Readable date'] }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        440,
+        0
+      ],
+      "id": "0598126e-91cf-4899-aa46-37db3d1c083d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        256,
+        224
+      ],
+      "id": "ba893f47-c4bd-40b4-ac14-5809fb8e3b64",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "afJyfd7pmQZQWl79",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "my_test_ID"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        384,
+        224
+      ],
+      "id": "4ac57341-deff-4d6d-9267-222459e3fb44",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        512,
+        224
+      ],
+      "id": "4ca8f4f5-0754-4ea9-b71d-2982fae67098",
+      "name": "Wikipedia"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        640,
+        224
+      ],
+      "id": "39f894ce-4b70-41ed-870c-3d2bd3f1842b",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "L1tk5LWv17GL41mh",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "cityName": "San Francisco, US"
+      },
+      "type": "n8n-nodes-base.openWeatherMapTool",
+      "typeVersion": 1,
+      "position": [
+        768,
+        224
+      ],
+      "id": "90419369-6832-4803-bf99-9979892784c0",
+      "name": "OpenWeatherMap",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "cZEkhbnYzCEnCCy1",
+          "name": "OpenWeatherMap account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        32,
+        0
+      ],
+      "id": "53f0fc3c-eeef-48ab-958a-be40e7aedb9f",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "USLACKBOT",
+          "mode": "list",
+          "cachedResultName": "slackbot"
+        },
+        "text": "={{ $('Schedule Trigger').item.json['Readable date'] }}\n\n{{ $json.output }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        976,
+        0
+      ],
+      "id": "48b9b25d-375e-4c7f-b98c-cb6bbc797f35",
+      "name": "Send a message",
+      "webhookId": "b6b02ea5-b71c-4528-89b1-55a00963c8b0",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "pwErB1f8q3GpNET2",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenWeatherMap": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ae6eb4d3-1b2b-471c-b969-7dbd3d2b9b18",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7e2141856ba68d52ad77a6b2519c88af1c901a9f6f2d71453da6616e7585d010"
+  },
+  "id": "lEnbkvQiQpGmqjlj",
+  "tags": []
+}
